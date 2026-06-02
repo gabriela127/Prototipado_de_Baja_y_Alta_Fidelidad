@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Validador de Llaves – Alta Fidelidad</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;500;700;800&display=swap');
+
+  :root {
+    --bg: #0e0f11;
+    --surface: #16181c;
+    --surface-2: #1e2025;
+    --border: #2a2d35;
+    --border-light: #3a3f4a;
+    --accent: #6ee7b7;
+    --accent-dim: #1a3d30;
+    --danger: #f87171;
+    --danger-dim: #3d1a1a;
+    --text: #e8e8ec;
+    --muted: #6b7280;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── TOPBAR ─── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  .brand-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: #0e0f11;
+  }
+
+  .version-badge {
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-family: var(--mono);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 24px;
+    font-size: 13px;
+    color: var(--muted);
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: inherit;
+    text-decoration: none;
+    transition: color .15s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-links .active { color: var(--accent); }
+
+  /* ─── HERO ─── */
+  .hero {
+    padding: 64px 32px 40px;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .endpoint-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-bottom: 24px;
+  }
+
+  .method-badge {
+    background: #1a3d2c;
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 100px;
+    letter-spacing: 1px;
+  }
+
+  h1 {
+    font-size: 40px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 16px;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .hero-sub {
+    font-size: 16px;
+    color: var(--muted);
+    line-height: 1.6;
+    max-width: 560px;
+  }
+
+  /* ─── MAIN LAYOUT ─── */
+  .main {
+    flex: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 32px 64px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .card-body { padding: 20px; }
+
+  /* ─── INPUT PANEL ─── */
+  .input-label {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-family: var(--mono);
+  }
+
+  .string-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 22px;
+    color: var(--text);
+    text-align: center;
+    letter-spacing: 4px;
+    outline: none;
+    transition: border-color .2s;
+    margin-bottom: 16px;
+  }
+
+  .string-input:focus {
+    border-color: var(--accent);
+  }
+
+  .string-input::placeholder {
+    color: var(--border-light);
+    letter-spacing: 2px;
+    font-size: 18px;
+  }
+
+  .presets {
+    margin-bottom: 20px;
+  }
+
+  .presets-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .presets-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .preset-chip {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+
+  .preset-chip:hover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent);
+  }
+
+  .preset-chip.invalid:hover {
+    border-color: var(--danger);
+    background: var(--danger-dim);
+    color: var(--danger);
+  }
+
+  .validate-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #0e0f11;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+    letter-spacing: 0.5px;
+  }
+
+  .validate-btn:hover { opacity: .9; }
+  .validate-btn:active { transform: scale(.98); }
+
+  /* ─── RESULT PANEL ─── */
+  .result-display {
+    min-height: 120px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+    transition: border-color .3s, background .3s;
+  }
+
+  .result-display.valid {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+  }
+
+  .result-display.invalid {
+    background: var(--danger-dim);
+    border-color: var(--danger);
+  }
+
+  .result-icon {
+    font-size: 40px;
+    line-height: 1;
+  }
+
+  .result-label {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .result-display.valid .result-label { color: var(--accent); }
+  .result-display.invalid .result-label { color: var(--danger); }
+
+  .result-sub {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .result-idle {
+    color: var(--muted);
+    font-size: 14px;
+    text-align: center;
+  }
+
+  /* ─── TRACE PANEL ─── */
+  .trace-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .trace-table th {
+    text-align: left;
+    padding: 8px 10px;
+    color: var(--muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--sans);
+    font-weight: 600;
+  }
+
+  .trace-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .trace-table tr:last-child td { border-bottom: none; }
+
+  .trace-table tr.open td:first-child { color: #60a5fa; }
+  .trace-table tr.close td:first-child { color: var(--danger); }
+  .trace-table tr.final-ok td { color: var(--accent); }
+  .trace-table tr.final-err td { color: var(--danger); }
+
+  .cnt-pill {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .cnt-up { background: #1a3461; color: #60a5fa; }
+  .cnt-zero { background: #2a2d35; color: var(--muted); }
+  .cnt-danger { background: var(--danger-dim); color: var(--danger); }
+
+  /* ─── API SNIPPET ─── */
+  .snippet-card {
+    grid-column: 1 / -1;
+  }
+
+  .snippet-tabs {
+    display: flex;
+    gap: 0;
+  }
+
+  .snippet-tab {
+    padding: 8px 16px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color .15s, border-color .15s;
+    font-family: var(--mono);
+  }
+
+  .snippet-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  pre {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 20px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-x: auto;
+    color: #c9d1d9;
+  }
+
+  .kw { color: #ff79c6; }
+  .ty { color: #8be9fd; }
+  .cm { color: #6272a4; }
+  .st { color: #f1fa8c; }
+  .fn { color: #50fa7b; }
+  .nu { color: #bd93f9; }
+  .op { color: var(--muted); }
+
+  /* ─── FOOTER ─── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 16px 32px;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  footer span { font-family: var(--mono); }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<nav class="topbar">
+  <div class="brand">
+    <div class="brand-icon">{}</div>
+    BraceValidator
+    <span class="version-badge">v1.0.0</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#" class="active">Validador</a></li>
+    <li><a href="#">API Docs</a></li>
+    <li><a href="#">Estimación</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="endpoint-pill">
+    <span class="method-badge">POST</span>
+    /api/v1/validate/braces
+  </div>
+  <h1>Validador de<br><span>Secuencia de Llaves</span></h1>
+  <p class="hero-sub">Microservicio que verifica si una cadena de caracteres <code style="font-family:var(--mono);color:var(--accent)">{}</code> está correctamente anidada y balanceada. Implementado en Java sin estructuras de datos nativas.</p>
+</section>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- INPUT CARD -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Entrada</span>
+      <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">String s</span>
+    </div>
+    <div class="card-body">
+      <div class="input-label">Secuencia a validar</div>
+      <input
+        class="string-input"
+        id="brace-input"
+        type="text"
+        placeholder="{ } { }"
+        maxlength="40"
+        autocomplete="off"
+        spellcheck="false"
+      >
+
+      <div class="presets">
+        <div class="presets-label">Ejemplos válidos</div>
+        <div class="presets-row">
+          <button class="preset-chip" onclick="setInput('{}')"><code>{}</code></button>
+          <button class="preset-chip" onclick="setInput('{{{}}}')">{{{}}}</button>
+          <button class="preset-chip" onclick="setInput('{}{}{{}}')">{}{}{{}}</button>
+          <button class="preset-chip" onclick="setInput('{}{}')">{}{}</button>
+        </div>
+      </div>
+
+      <div class="presets" style="margin-bottom:24px;">
+        <div class="presets-label" style="color:#f87171;">Ejemplos inválidos</div>
+        <div class="presets-row">
+          <button class="preset-chip invalid" onclick="setInput('{}}')">{}}  </button>
+          <button class="preset-chip invalid" onclick="setInput('{{}')">{{}</button>
+          <button class="preset-chip invalid" onclick="setInput('{{{}}')">{{{}} </button>
+          <button class="preset-chip invalid" onclick="setInput('}{}')">}{}</button>
+        </div>
+      </div>
+
+      <button class="validate-btn" onclick="validate()">Validar secuencia →</button>
+    </div>
+  </div>
+
+  <!-- RESULT CARD -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Resultado</span>
+      <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">boolean</span>
+    </div>
+    <div class="card-body">
+      <div class="result-display" id="result-display">
+        <div class="result-idle">Ingresa una secuencia<br>y presiona validar</div>
+      </div>
+
+      <div id="trace-container" style="display:none;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;font-family:var(--sans);font-weight:600;">Traza de ejecución</div>
+        <table class="trace-table" id="trace-table">
+          <thead>
+            <tr>
+              <th>Char</th>
+              <th>Índice</th>
+              <th>Operación</th>
+              <th>Contador</th>
+            </tr>
+          </thead>
+          <tbody id="trace-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE SNIPPET -->
+  <div class="card snippet-card">
+    <div class="card-header">
+      <span class="card-title">Implementación Java</span>
+      <div class="snippet-tabs">
+        <div class="snippet-tab active">BraceValidator.java</div>
+        <div class="snippet-tab" style="opacity:.5">BraceStack.java</div>
+      </div>
+    </div>
+    <div class="card-body">
+<pre><span class="cm">// Análisis de Sistemas — Microservicio Validador de Llaves</span>
+<span class="cm">// Solución O(n) tiempo, O(1) espacio — sin estructuras de datos nativas de Java</span>
+
+<span class="kw">public class</span> <span class="ty">BraceValidator</span> {
+
+    <span class="cm">/**
+     * Verifica si la secuencia de llaves es correctamente construida.
+     * Cada '{' debe tener su '}' correspondiente, incluso anidados.
+     *
+     * @param  s  cadena de caracteres '{' y '}'
+     * @return    true si la secuencia es válida, false en caso contrario
+     */</span>
+    <span class="kw">public static boolean</span> <span class="fn">isValid</span>(<span class="ty">String</span> s) {
+        <span class="kw">int</span> contador <span class="op">=</span> <span class="nu">0</span>;
+
+        <span class="cm">// Recorre cada carácter usando charAt()</span>
+        <span class="kw">for</span> (<span class="kw">int</span> i <span class="op">=</span> <span class="nu">0</span>; i <span class="op">&lt;</span> s.<span class="fn">length</span>(); i<span class="op">++</span>) {
+            <span class="kw">char</span> c <span class="op">=</span> s.<span class="fn">charAt</span>(i);
+
+            <span class="kw">if</span> (c <span class="op">==</span> <span class="st">'{'</span>) {
+                contador<span class="op">++</span>;
+            } <span class="kw">else if</span> (c <span class="op">==</span> <span class="st">'}'</span>) {
+                contador<span class="op">--</span>;
+                <span class="cm">// Cierre sin apertura previa → inválido de inmediato</span>
+                <span class="kw">if</span> (contador <span class="op">&lt;</span> <span class="nu">0</span>) <span class="kw">return false</span>;
+            }
+        }
+
+        <span class="cm">// Válido sólo si todas las aperturas fueron cerradas</span>
+        <span class="kw">return</span> contador <span class="op">==</span> <span class="nu">0</span>;
+    }
+
+    <span class="cm">// Alternativa con for-each (idéntica lógica)</span>
+    <span class="kw">public static boolean</span> <span class="fn">isValidForEach</span>(<span class="ty">String</span> s) {
+        <span class="kw">int</span> contador <span class="op">=</span> <span class="nu">0</span>;
+        <span class="kw">for</span> (<span class="kw">char</span> c <span class="op">:</span> s.<span class="fn">toCharArray</span>()) {
+            <span class="kw">if</span>      (c <span class="op">==</span> <span class="st">'{'</span>) contador<span class="op">++</span>;
+            <span class="kw">else if</span> (c <span class="op">==</span> <span class="st">'}'</span>) { <span class="kw">if</span> (<span class="op">--</span>contador <span class="op">&lt;</span> <span class="nu">0</span>) <span class="kw">return false</span>; }
+        }
+        <span class="kw">return</span> contador <span class="op">==</span> <span class="nu">0</span>;
+    }
+}</pre>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <span>Facultad de Ingeniería en Sistemas — Análisis de Sistemas 2026</span>
+  <span>BraceValidator · Java 17 · Complejidad O(n)</span>
+</footer>
+
+<script>
+function setInput(val) {
+  document.getElementById('brace-input').value = val;
+  validate();
+}
+
+function validate() {
+  const s = document.getElementById('brace-input').value.trim();
+  if (!s) return;
+
+  const display = document.getElementById('result-display');
+  const traceContainer = document.getElementById('trace-container');
+  const traceBody = document.getElementById('trace-body');
+
+  // Run algorithm with trace
+  let contador = 0;
+  let valid = true;
+  const rows = [];
+
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (c !== '{' && c !== '}') continue;
+    const prev = contador;
+    let op, cls;
+    if (c === '{') {
+      contador++;
+      op = 'Abre → contador++';
+      cls = 'open';
+    } else {
+      contador--;
+      op = 'Cierra → contador--';
+      cls = 'close';
+    }
+    if (contador < 0) {
+      rows.push({ c, i, op: 'Cierra → contador-- → INVÁLIDO', cls: 'final-err', cnt: contador });
+      valid = false;
+      break;
+    }
+    rows.push({ c, i, op, cls, cnt: contador });
+  }
+
+  if (valid && contador !== 0) valid = false;
+
+  // Render result
+  display.className = 'result-display ' + (valid ? 'valid' : 'invalid');
+  display.innerHTML = `
+    <div class="result-icon">${valid ? '✓' : '✗'}</div>
+    <div class="result-label">${valid ? 'true' : 'false'}</div>
+    <div class="result-sub">${valid ? 'Secuencia correctamente construida' : 'Secuencia inválida'}</div>
+  `;
+
+  // Render trace
+  traceBody.innerHTML = rows.map(r => {
+    let cntClass = r.cnt > 0 ? 'cnt-up' : r.cnt === 0 ? 'cnt-zero' : 'cnt-danger';
+    return `<tr class="${r.cls}">
+      <td style="font-size:18px;font-weight:700;letter-spacing:2px;">${r.c}</td>
+      <td style="color:var(--muted);">[${r.i}]</td>
+      <td>${r.op}</td>
+      <td><span class="cnt-pill ${cntClass}">${r.cnt}</span></td>
+    </tr>`;
+  }).join('') + (valid
+    ? `<tr class="final-ok"><td colspan="4" style="text-align:center;padding:10px;">→ contador == 0 → <strong>return true</strong></td></tr>`
+    : (contador > 0 ? `<tr class="final-err"><td colspan="4" style="text-align:center;padding:10px;">→ ${contador} llave(s) sin cerrar → <strong>return false</strong></td></tr>` : '')
+  );
+
+  traceContainer.style.display = 'block';
+}
+</script>
+</body>
+</html>

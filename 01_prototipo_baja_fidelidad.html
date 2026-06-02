@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prototipo Baja Fidelidad – Validador de Llaves</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@400;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f5f3ef;
+    color: #1a1a1a;
+    padding: 40px;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+    background: white;
+    border: 1px solid #ccc;
+    padding: 48px;
+    box-shadow: 4px 4px 0px #aaa;
+  }
+
+  .header {
+    border-bottom: 3px solid #1a1a1a;
+    padding-bottom: 16px;
+    margin-bottom: 32px;
+  }
+
+  .header .tag {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-family: 'Courier Prime', monospace;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #555;
+    margin-top: 6px;
+  }
+
+  .meta {
+    display: flex;
+    gap: 32px;
+    margin-top: 24px;
+    font-size: 12px;
+    color: #666;
+    border: 1px dashed #bbb;
+    padding: 12px 16px;
+    background: #fafaf8;
+  }
+
+  .meta span { display: flex; flex-direction: column; gap: 2px; }
+  .meta strong { color: #1a1a1a; font-size: 13px; }
+
+  .section-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #777;
+    margin-bottom: 16px;
+    margin-top: 32px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  /* Flowchart wireframe */
+  .flowchart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 24px 0;
+  }
+
+  .fc-node {
+    border: 2px solid #1a1a1a;
+    padding: 10px 20px;
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.4;
+    position: relative;
+    background: white;
+    min-width: 240px;
+  }
+
+  .fc-node.diamond {
+    background: #fff9ec;
+    transform: none;
+    clip-path: none;
+    border: none;
+    outline: 2px solid #1a1a1a;
+    padding: 14px 32px;
+    position: relative;
+  }
+
+  .fc-node.diamond::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid #1a1a1a;
+    transform: rotate(0deg);
+  }
+
+  .diamond-wrapper {
+    position: relative;
+    width: 240px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 4px 0;
+  }
+
+  .diamond-wrapper svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .diamond-wrapper .label {
+    position: relative;
+    z-index: 1;
+    font-size: 13px;
+    text-align: center;
+    line-height: 1.3;
+    font-weight: 600;
+    padding: 0 32px;
+  }
+
+  .fc-node.terminal {
+    border-radius: 100px;
+    background: #1a1a1a;
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+    min-width: 180px;
+  }
+
+  .fc-node.process {
+    background: #eef3ff;
+  }
+
+  .fc-node.output-true {
+    background: #e8f5e9;
+    border-color: #2e7d32;
+    color: #1b5e20;
+    font-weight: 600;
+    min-width: 180px;
+    border-radius: 4px;
+  }
+
+  .fc-node.output-false {
+    background: #ffebee;
+    border-color: #c62828;
+    color: #7f0000;
+    font-weight: 600;
+    min-width: 180px;
+    border-radius: 4px;
+  }
+
+  .arrow {
+    width: 2px;
+    height: 24px;
+    background: #1a1a1a;
+    position: relative;
+  }
+
+  .arrow::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid #1a1a1a;
+  }
+
+  .arrow-label {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    color: #555;
+    white-space: nowrap;
+    font-style: italic;
+  }
+
+  .branch-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 60px;
+    width: 100%;
+    position: relative;
+  }
+
+  .branch-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .branch-label {
+    font-size: 11px;
+    color: #666;
+    font-style: italic;
+    margin-bottom: 4px;
+    text-align: center;
+  }
+
+  .h-line {
+    height: 2px;
+    background: #1a1a1a;
+    position: absolute;
+    top: 0;
+  }
+
+  /* Stack visualization */
+  .stack-demo {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    margin-top: 8px;
+  }
+
+  .stack-steps {
+    flex: 1;
+  }
+
+  .stack-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    margin-bottom: 6px;
+    background: #fafaf8;
+    font-size: 12px;
+  }
+
+  .stack-step .char {
+    font-family: 'Courier Prime', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    width: 28px;
+    text-align: center;
+  }
+
+  .stack-step .op {
+    font-size: 11px;
+    color: #555;
+    flex: 1;
+  }
+
+  .stack-step .cnt {
+    font-family: 'Courier Prime', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    width: 24px;
+    text-align: center;
+  }
+
+  .stack-step.open .char { color: #1565c0; }
+  .stack-step.close .char { color: #c62828; }
+  .stack-step.error { background: #fff3f3; border-color: #f44336; }
+  .stack-step.ok { background: #f1f8e9; border-color: #66bb6a; }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    font-size: 12px;
+    color: #555;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend-box {
+    width: 20px;
+    height: 14px;
+    border: 1px solid;
+  }
+
+  .notes-box {
+    border: 1px dashed #bbb;
+    background: #fffdf5;
+    padding: 16px;
+    font-size: 12px;
+    color: #555;
+    line-height: 1.7;
+    margin-top: 16px;
+  }
+
+  .notes-box strong {
+    color: #1a1a1a;
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .page { border: none; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="tag">Análisis de Sistemas · Prototipo de Baja Fidelidad</div>
+    <h1>Validador de Secuencia de Llaves { }</h1>
+    <div class="subtitle">Diagrama de flujo del algoritmo — Microservicio Java</div>
+    <div class="meta">
+      <span><strong>Herramienta</strong>Maqueta computacional (HTML)</span>
+      <span><strong>Fecha</strong>Junio 2026</span>
+      <span><strong>Enfoque</strong>Contador / Stack manual</span>
+      <span><strong>Lenguaje</strong>Java (sin estructuras de datos nativas)</span>
+    </div>
+  </div>
+
+  <!-- FLOWCHART -->
+  <div class="section-title">Diagrama de Flujo del Algoritmo</div>
+
+  <div class="flowchart">
+
+    <!-- START -->
+    <div class="fc-node terminal">INICIO</div>
+    <div class="arrow"></div>
+
+    <!-- INPUT -->
+    <div class="fc-node">
+      Recibir <strong>String s</strong><br>
+      <small style="color:#666">Ej: "{{{}}}",  "{}}", etc.</small>
+    </div>
+    <div class="arrow"></div>
+
+    <!-- INIT -->
+    <div class="fc-node process">
+      Inicializar <strong>contador = 0</strong>
+    </div>
+    <div class="arrow"></div>
+
+    <!-- LOOP DECISION -->
+    <div class="diamond-wrapper">
+      <svg viewBox="0 0 240 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="120,4 236,36 120,68 4,36" fill="#fff9ec" stroke="#1a1a1a" stroke-width="2"/>
+      </svg>
+      <div class="label">¿Quedan<br>caracteres?</div>
+    </div>
+
+    <!-- BRANCHES from loop -->
+    <div style="position:relative; width:100%; display:flex; justify-content:center; height:24px;">
+      <div style="position:absolute; left:50%; top:0; height:24px; width:2px; background:#1a1a1a;"></div>
+      <!-- left arm -->
+      <div style="position:absolute; left:calc(50% - 100px); top:0; height:2px; width:100px; background:#1a1a1a;"></div>
+      <!-- right arm (NO path) -->
+      <div style="position:absolute; left:50%; top:0; height:2px; width:100px; background:#1a1a1a;"></div>
+    </div>
+
+    <div class="branch-row" style="margin-top:0;">
+      <!-- NO branch (end loop) -->
+      <div class="branch-col">
+        <div class="branch-label" style="margin-top:4px;">No →</div>
+        <div class="arrow"></div>
+        <!-- Final check -->
+        <div class="diamond-wrapper">
+          <svg viewBox="0 0 240 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="120,4 236,36 120,68 4,36" fill="#fff9ec" stroke="#1a1a1a" stroke-width="2"/>
+          </svg>
+          <div class="label">¿contador<br>== 0?</div>
+        </div>
+        <div class="arrow"></div>
+        <!-- Branch true/false -->
+        <div style="position:relative; width:200px; display:flex; justify-content:center; height:24px;">
+          <div style="position:absolute; left:50%; top:0; height:2px; width:90px; background:#1a1a1a;"></div>
+          <div style="position:absolute; left:calc(50% - 90px); top:0; height:2px; width:90px; background:#1a1a1a;"></div>
+        </div>
+        <div style="display:flex; gap:24px; justify-content:center;">
+          <div class="branch-col">
+            <div class="branch-label">Sí</div>
+            <div class="arrow"></div>
+            <div class="fc-node output-true">return <strong>true</strong><br><small>Secuencia válida ✓</small></div>
+          </div>
+          <div class="branch-col">
+            <div class="branch-label">No</div>
+            <div class="arrow"></div>
+            <div class="fc-node output-false">return <strong>false</strong><br><small>Llaves sin cerrar ✗</small></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- YES branch (read char) -->
+      <div class="branch-col" style="max-width:300px;">
+        <div class="branch-label" style="margin-top:4px;">Sí ↓</div>
+        <div class="arrow"></div>
+        <div class="fc-node process">
+          Leer carácter <strong>c</strong><br>
+          <small style="color:#666">charAt(i) o for-each</small>
+        </div>
+        <div class="arrow"></div>
+
+        <!-- Is { ? -->
+        <div class="diamond-wrapper">
+          <svg viewBox="0 0 240 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="120,4 236,36 120,68 4,36" fill="#fff9ec" stroke="#1a1a1a" stroke-width="2"/>
+          </svg>
+          <div class="label">¿c == '{'?</div>
+        </div>
+        <div class="arrow"></div>
+
+        <div style="display:flex; gap:24px; justify-content:center;">
+          <div class="branch-col">
+            <div class="branch-label">Sí</div>
+            <div class="arrow"></div>
+            <div class="fc-node process" style="min-width:120px;">contador++</div>
+          </div>
+          <div class="branch-col">
+            <div class="branch-label">No (es '}')</div>
+            <div class="arrow"></div>
+            <div class="fc-node process" style="min-width:120px;">contador--</div>
+            <div class="arrow" style="position:relative">
+              <span class="arrow-label"></span>
+            </div>
+            <!-- Is negative? -->
+            <div class="diamond-wrapper" style="width:180px;">
+              <svg viewBox="0 0 200 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <polygon points="100,4 196,36 100,68 4,36" fill="#fff9ec" stroke="#1a1a1a" stroke-width="2"/>
+              </svg>
+              <div class="label" style="padding:0 20px;">contador<br>&lt; 0?</div>
+            </div>
+            <div class="arrow"></div>
+            <div class="branch-col">
+              <div class="branch-label">Sí</div>
+              <div class="arrow"></div>
+              <div class="fc-node output-false" style="min-width:140px;">return <strong>false</strong><br><small>Cierre sin apertura ✗</small></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px; font-size:11px; color:#888; text-align:center; font-style:italic;">
+          ↑ volver al inicio del bucle (siguiente carácter)
+        </div>
+      </div>
+    </div>
+
+    <div style="height:32px;"></div>
+    <div class="fc-node terminal">FIN</div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="section-title" style="margin-top:32px;">Leyenda de símbolos</div>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-box" style="background:#1a1a1a; border-color:#1a1a1a; border-radius:100px;"></div>
+      Terminal (inicio/fin)
+    </div>
+    <div class="legend-item">
+      <div class="legend-box" style="background:#eef3ff; border-color:#1a1a1a;"></div>
+      Proceso
+    </div>
+    <div class="legend-item">
+      <div class="legend-box" style="background:#fff9ec; border-color:#1a1a1a; clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);"></div>
+      Decisión (rombo)
+    </div>
+    <div class="legend-item">
+      <div class="legend-box" style="background:#e8f5e9; border-color:#2e7d32;"></div>
+      Retorno verdadero
+    </div>
+    <div class="legend-item">
+      <div class="legend-box" style="background:#ffebee; border-color:#c62828;"></div>
+      Retorno falso
+    </div>
+  </div>
+
+  <!-- TRACE EXAMPLE -->
+  <div class="section-title" style="margin-top:32px;">Ejemplo de traza: "{}{{}}"</div>
+  <div class="stack-demo">
+    <div class="stack-steps">
+      <div style="display:grid; grid-template-columns:40px 1fr 1fr 60px; gap:0; font-size:11px; font-weight:600; padding:6px 12px; background:#f0f0f0; margin-bottom:4px;">
+        <span>Char</span><span>Operación</span><span>Estado</span><span>Contador</span>
+      </div>
+      <div class="stack-step open">
+        <div class="char">{</div>
+        <div class="op">Llave abre → contador++</div>
+        <div class="op">Bucle continúa</div>
+        <div class="cnt" style="color:#1565c0;">1</div>
+      </div>
+      <div class="stack-step close">
+        <div class="char">}</div>
+        <div class="op">Llave cierra → contador--</div>
+        <div class="op">Bucle continúa</div>
+        <div class="cnt">0</div>
+      </div>
+      <div class="stack-step open">
+        <div class="char">{</div>
+        <div class="op">Llave abre → contador++</div>
+        <div class="op">Bucle continúa</div>
+        <div class="cnt" style="color:#1565c0;">1</div>
+      </div>
+      <div class="stack-step open">
+        <div class="char">{</div>
+        <div class="op">Llave abre → contador++</div>
+        <div class="op">Bucle continúa</div>
+        <div class="cnt" style="color:#1565c0;">2</div>
+      </div>
+      <div class="stack-step close">
+        <div class="char">}</div>
+        <div class="op">Llave cierra → contador--</div>
+        <div class="op">Bucle continúa</div>
+        <div class="cnt">1</div>
+      </div>
+      <div class="stack-step close ok">
+        <div class="char">}</div>
+        <div class="op">Llave cierra → contador--</div>
+        <div class="op">Fin de cadena</div>
+        <div class="cnt">0</div>
+      </div>
+      <div style="padding:8px 12px; background:#e8f5e9; border:1px solid #66bb6a; font-size:12px; font-weight:600; color:#1b5e20; margin-top:4px;">
+        → contador == 0 → return <strong>true</strong> ✓
+      </div>
+    </div>
+  </div>
+
+  <div class="notes-box" style="margin-top:24px;">
+    <strong>Notas de diseño del algoritmo</strong>
+    El método usa un único contador entero (no requiere importar Stack de Java). Recorre el String con <code>charAt(i)</code> o sintaxis for-each. La solución es O(n) en tiempo y O(1) en espacio. Si el contador cae por debajo de 0, retorna <code>false</code> inmediatamente (short-circuit). Solo si al final el contador es exactamente 0 retorna <code>true</code>.
+  </div>
+
+</div>
+</body>
+</html>
